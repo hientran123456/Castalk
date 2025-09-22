@@ -1,0 +1,71 @@
+import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.MobileElement;
+import io.appium.java_client.android.AndroidDriver;
+import org.openqa.selenium.By;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.Assert;
+import org.testng.annotations.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+public class LoginTests {
+    AppiumDriver < MobileElement > driver;
+    @BeforeClass
+    public void setup() throws MalformedURLException {
+        DesiredCapabilities caps = new DesiredCapabilities();
+        caps.setCapability("platformName", "Android");
+        caps.setCapability("deviceName", "emulator-5554");
+        caps.setCapability("appPackage", "com.castalk.app");
+        caps.setCapability("appActivity", "com.castalk.app.MainActivity");
+        caps.setCapability("automationName", "UiAutomator2");
+        driver = new AndroidDriver < > (new URL("http://127.0.0.1:4723/wd/hub"), caps);
+    }
+    @Test
+    public void testValidLogin() {
+        driver.findElement(By.id("idEmail")).sendKeys("tester+126@castalk.com");
+        driver.findElement(By.id("idPassword")).sendKeys("123@123Ab");
+        driver.findElement(By.id("idLoginBtn")).click();
+        MobileElement homeTitle = driver.findElement(By.id("idHomeTitle"));
+        Assert.assertTrue(homeTitle.isDisplayed(), "Home screen not displayed");
+    }
+    @Test
+    public void testInvalidPassword() {
+        driver.findElement(By.id("idEmail")).clear();
+        driver.findElement(By.id("idPassword")).clear();
+        driver.findElement(By.id("idEmail")).sendKeys("tester+126@castalk.com");
+        driver.findElement(By.id("idPassword")).sendKeys("WrongPass");
+        driver.findElement(By.id("idLoginBtn")).click();
+        MobileElement errorMsg = driver.findElement(By.id("idErrorMsg"));
+        Assert.assertEquals(errorMsg.getText(), "Invalid email or password");
+    }
+    @Test
+    public void testInvalidEmailFormat() {
+        driver.findElement(By.id("idEmail")).clear();
+        driver.findElement(By.id("idPassword")).clear();
+        driver.findElement(By.id("idEmail")).sendKeys("abc123");
+        driver.findElement(By.id("idPassword")).sendKeys("123@123Ab");
+        driver.findElement(By.id("idLoginBtn")).click();
+        MobileElement errorMsg = driver.findElement(By.id("idErrorMsg"));
+        Assert.assertEquals(errorMsg.getText(), "Invalid email or password");
+    }
+    @Test
+    public void testLoginButtonDisabledWhenFieldsBlank() {
+        driver.findElement(By.id("idEmail")).clear();
+        driver.findElement(By.id("idPassword")).clear();
+        MobileElement loginButton = driver.findElement(By.id("idLoginBtn"));
+        boolean isEnabled = loginButton.isEnabled();
+        Assert.assertFalse(isEnabled, "Sign In button should be disabled when fields are blank");
+    }
+    @Test
+    public void testPasswordMasked() {
+        driver.findElement(By.id("idPassword")).clear();
+        driver.findElement(By.id("idPassword")).sendKeys("123@123Ab");
+        String inputType = driver.findElement(By.id("idPassword")).getAttribute("password");
+        Assert.assertEquals(inputType, "true", "Password is not masked");
+    }
+    @AfterClass
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+}
