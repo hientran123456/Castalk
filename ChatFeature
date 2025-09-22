@@ -1,0 +1,51 @@
+import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.MobileElement;
+import io.appium.java_client.android.AndroidDriver;
+import org.openqa.selenium.By;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.Assert;
+import org.testng.annotations.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+public class ChatTests {
+    AppiumDriver < MobileElement > driver;
+    @BeforeClass
+    public void setup() throws MalformedURLException {
+        DesiredCapabilities caps = new DesiredCapabilities();
+        caps.setCapability("platformName", "Android");
+        caps.setCapability("deviceName", "emulator-5554");
+        caps.setCapability("appPackage", "com.castalk.app");
+        caps.setCapability("appActivity", "com.castalk.app.MainActivity");
+        caps.setCapability("automationName", "UiAutomator2");
+        driver = new AndroidDriver < > (new URL("http://127.0.0.1:4723/wd/hub"), caps);
+    }
+    @Test
+    public void testSendValidMessage() {
+        driver.findElement(By.id("idChatInput")).sendKeys("Hello");
+        driver.findElement(By.id("idSendButton")).click();
+        MobileElement userMsg = driver.findElement(By.xpath("//android.widget.TextView[@text='Hello']"));
+        Assert.assertTrue(userMsg.isDisplayed(), "User's message is not displayed");
+        MobileElement aiReply = driver.findElement(By.id("idAiMessage"));
+        Assert.assertTrue(aiReply.isDisplayed(), "AI's response is not displayed");
+    }
+    @Test
+    public void testEmptyMessageNotAllowed() {
+        driver.findElement(By.id("idChatInput")).clear();
+        MobileElement sendBtn = driver.findElement(By.id("idSendButton"));
+        Assert.assertFalse(sendBtn.isEnabled(), "Send button should be disabled when input is empty");
+    }
+    @Test
+    public void testMessageExceedsMaxLengthError() {
+        String overLimitMsg = "A".repeat(257);
+        driver.findElement(By.id("idChatInput")).clear();
+        driver.findElement(By.id("idChatInput")).sendKeys(overLimitMsg);
+        driver.findElement(By.id("idSendButton")).click();
+        // Verify error message
+        MobileElement errorMsg = driver.findElement(By.id("idErrorMsg"));
+        Assert.assertEquals(errorMsg.getText(), "Messages cannot exceed 256 characters", "Expected max length error is not displayed");
+    }
+    @AfterClass
+    public void tearDown() {
+        if (driver != null) driver.quit();
+    }
+}
